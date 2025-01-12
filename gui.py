@@ -95,7 +95,7 @@ class LSTMGui(QMainWindow):
         try:
             # Check if the status_textbox is already initialized
             if hasattr(self, 'status_textbox'):
-                # self.status_textbox.append(f"Loading model: {model_name}...")
+                self.status_textbox.append(f"------------------------------------")
                 if model_name == "lstm_model_nox_100_2":
                     self.status_textbox.append("LSTM NOX model with Dropping Initial Parameters")
                 elif model_name == "lstm_model_sox_100":
@@ -180,6 +180,11 @@ class LSTMGui(QMainWindow):
                 # Reindex to match training data columns
                 self.test_data = self.test_data.reindex(columns=feature_columns, fill_value=0)
 
+                # print(f"Test data columns: {self.test_data.columns}")
+                # print(f"Size of test data: {self.test_data.shape}")
+                # print(f"Feature columns: {feature_columns}")
+                # print(f"Size of feature columns: {len(feature_columns)}")
+
             else:
                 # Drop categorical columns for non-onehot models
                 categorical_columns = ['Class', 'Load', 'SeaTemp', 'WindSpeed']
@@ -244,13 +249,20 @@ class LSTMGui(QMainWindow):
             predictions = self.model.predict(self.sequences)
             self.predictions = predictions.flatten()
 
-            sensor_columns = self.test_data.columns.difference(['RunId', 'Time']).tolist()
+            # sensor_columns = self.test_data.columns.difference(['RunId', 'Time']).tolist()
+            # print(f"Sensor columns in prediction: {self.test_data.columns.tolist()}")
+
+            sensor_columns = self.test_data.columns.tolist()
+            sensor_columns.remove('RunId')
+            sensor_columns.remove('Time')
+
             predictions_2d = predictions.reshape(-1, 1)
             y_values_2d = self.y_values.reshape(-1, 1)
             num_features = self.scaler.n_features_in_
 
             dummy_array_pred = np.zeros((predictions_2d.shape[0], num_features))
             dummy_array_true = np.zeros((y_values_2d.shape[0], num_features))
+
             target_index = sensor_columns.index(self.target_sensor)
             dummy_array_pred[:, target_index] = predictions_2d[:, 0]
             dummy_array_true[:, target_index] = y_values_2d[:, 0]
@@ -263,7 +275,7 @@ class LSTMGui(QMainWindow):
             self.update_plot()
 
             # Display predictions vs true values in the status textbox
-            self.status_textbox.append("Predictions")
+            self.status_textbox.append("Predictions:")
             for idx, (prediction, true_value) in enumerate(zip(denormalized_predictions, denormalized_y_true)):
                 self.status_textbox.append(f"{idx + 1}: Predicted = {prediction:.4f}, True = {true_value:.4f}")
 
